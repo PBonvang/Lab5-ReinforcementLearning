@@ -53,7 +53,7 @@ boards = [
 boardIdx = 0
 
 wins_in_a_row = 0
-n = 385
+n = 2
 iterations = 0
 run_iterations = []
 runs = 0
@@ -75,7 +75,8 @@ def prepare_next_run():
         results[boardIdx, gammaIdx, 0] = np.mean(run_iterations)
         results[boardIdx, gammaIdx, 1] = np.std(run_iterations)
         results[boardIdx, gammaIdx, 2] = (time.time() - run_start)/n
-        print(f"{boards[boardIdx]} ({gammas[gammaIdx]}) done: ", (time.time() - run_start)/n)
+        result_block = results[boardIdx, gammaIdx]
+        print(f"{boards[boardIdx]} ({gammas[gammaIdx]}) -->  M = {result_block[0]}, STD: {result_block[1]}, Avg. time: {result_block[2]}")
 
         run_iterations.clear()
         run_start = time.time()
