@@ -17,20 +17,15 @@ import numpy as np
 import pygame
 from collections import defaultdict
 from random import randint
-from math import dist
-
-# Initialize the environment
-env = GridWorld()
-env.reset()
-x, y, has_key = env.get_state()
+import time
 
 # Definitions and default settings
 actions = ['left', 'right', 'up', 'down']
 exit_program = False
 action_taken = False
-slow = True
+slow = False
 runai = True
-render = True
+render = False
 done = False
 
 # Game clock
@@ -39,14 +34,78 @@ clock = pygame.time.Clock()
 # INSERT YOUR CODE HERE (1/2)
 # Define data structure for q-table
 Q = defaultdict(lambda: [0.,0.,0.,0.])
-gamma = 0.9
-rndChance = 1/100
+gammas = [
+    0.7,
+    0.8,
+    0.9]
+gammaIdx = 0
 previous_reward = 0
 previous_x = 0
 previous_y = 0
-previous_action = None
+
+boards = [
+    "Mazes/40-maze.txt",
+    "Mazes/30-maze.txt",
+    "Mazes/20-maze.txt",
+    "Mazes/10-maze.txt",
+    "Mazes/8-maze.txt",
+]
+boardIdx = 0
+
+wins_in_a_row = 0
+n = 385
+iterations = 0
+run_iterations = []
+runs = 0
+run_start = time.time()
+
+results = np.zeros((len(boards), len(gammas), 3))
+
+def prepare_next_run():
+    global runs, iterations, boardIdx, gammaIdx, exit_program, results, run_start
+
+    runs += 1
+    run_iterations.append(iterations)
+
+    print(f"{boards[boardIdx]} ({gammas[gammaIdx]}) RUN: ", runs)
+
+    if runs == n:
+        runs = 0
+        
+        results[boardIdx, gammaIdx, 0] = np.mean(run_iterations)
+        results[boardIdx, gammaIdx, 1] = np.std(run_iterations)
+        results[boardIdx, gammaIdx, 2] = (time.time() - run_start)/n
+        print(f"{boards[boardIdx]} ({gammas[gammaIdx]}) done: ", (time.time() - run_start)/n)
+
+        run_iterations.clear()
+        run_start = time.time()
+
+
+        if gammaIdx != len(gammas) - 1:
+            gammaIdx += 1
+        elif boardIdx != len(boards) - 1:
+            boardIdx += 1
+            gammaIdx = 0
+        else:
+            exit_program = True
+            print_results(results)
+
+    Q.clear()
+    iterations = 0
+        
+def print_results(results):
+    print("################################################## DONE ##################################################")
+    for bi, board in enumerate(boards):
+        for gi, gamma in enumerate(gammas):
+            result_block = results[bi,gi]
+            print(f"Board: {board}, Gamma: {gamma} --> M = {result_block[0]}, STD: {result_block[1]}, Avg. time: {result_block[2]}")
 
 # END OF YOUR CODE (1/2)
+
+# Initialize the environment
+env = GridWorld(boards[boardIdx])
+env.reset(boards[boardIdx])
+x, y, has_key = env.get_state()
 
 while not exit_program:
     if render:
@@ -58,10 +117,17 @@ while not exit_program:
         
     # Automatic reset environment in AI mode
     if done and runai:
-        if env.won(x, y, has_key, env.board):
-            print("Game won!, matrix:\n",Q)
+        iterations += 1
 
-        env.reset()
+        if env.won(x, y, has_key, env.board):
+            wins_in_a_row += 1
+
+            if wins_in_a_row == 5:
+                prepare_next_run()
+        else:
+            wins_in_a_row = 0
+
+        env.reset(boards[boardIdx])
         x, y, has_key = env.get_state()
         previous_x = x
         previous_y = y
@@ -112,7 +178,7 @@ while not exit_program:
         # 1. choose an action
         q_current = Q[(x,y,has_key)]
 
-        if randint(1,rndChance**-1) == 1:
+        if randint(1,env.board.shape[0]**2) == 1:
             action_num = randint(0,3)
             action = actions[action_num]
         else:
@@ -126,7 +192,7 @@ while not exit_program:
         if x == previous_x and y == previous_y:
             reward = -100
         q_next = Q[(x, y, has_key)]
-        q_current[action_num] = reward + gamma*np.max(q_next)
+        q_current[action_num] = reward + gammas[gammaIdx]*np.max(q_next)
 
         previous_reward = reward
         previous_x = x

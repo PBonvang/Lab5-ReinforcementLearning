@@ -21,11 +21,11 @@ class GridWorld():
     pathColor = (225, 220, 225)
     wallColor = (157, 143, 130)
     
-    def __init__(self, state=None):
+    def __init__(self, boardPath, state=None):
         pygame.init()
         self.reward = 0
         if state is None:
-            self.x, self.y, self.has_key, self.board, self.score = self.new_game()            
+            self.x, self.y, self.has_key, self.board, self.score = self.new_game(boardPath)            
         else:
             x, y, has_key, board, score = state
             self.x, self.y, self.has_key, self.board, self.score = x, y, has_key, board.copy(), score
@@ -88,8 +88,8 @@ class GridWorld():
         # Display
         pygame.display.flip()
 
-    def reset(self):
-        self.x, self.y, self.has_key, self.board, self.score = self.new_game()
+    def reset(self, boardPath):
+        self.x, self.y, self.has_key, self.board, self.score = self.new_game(boardPath)
 
     def close(self):
         pygame.quit()
@@ -163,12 +163,12 @@ class GridWorld():
         score += reward                        
         return (newx, newy, has_key, board, score, reward)
         
-    def new_game(self):
-        board = np.loadtxt('Mazes/20-maze.txt', dtype=int).T
+    def new_game(self, boardPath):
+        board = np.loadtxt(boardPath, dtype=int).T
         self.board_shape = board.shape
 
         if np.sum(board==2) != 1 or np.sum(board==4) != 1:
-            raise Exception('board.txt corrupt')
+            raise Exception('board text file is corrupt')
 
         start_x, start_y = np.where(board == 0)
         i = np.random.randint(len(start_x))
