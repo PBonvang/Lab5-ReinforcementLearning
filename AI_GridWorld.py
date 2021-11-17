@@ -53,7 +53,7 @@ boards = [
 boardIdx = 0
 
 wins_in_a_row = 0
-n = 2
+n = 385
 iterations = 0
 run_iterations = []
 runs = 0
