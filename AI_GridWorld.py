@@ -39,7 +39,6 @@ gammas = [
     0.8,
     0.9]
 gammaIdx = 0
-previous_reward = 0
 previous_x = 0
 previous_y = 0
 
@@ -195,7 +194,6 @@ while not exit_program:
         q_next = Q[(x, y, has_key)]
         q_current[action_num] = reward + gammas[gammaIdx]*np.max(q_next)
 
-        previous_reward = reward
         previous_x = x
         previous_y = y
 
